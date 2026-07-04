@@ -25,7 +25,7 @@ export default function App() {
     const traceLog = []
 
     for (const d of decisions) {
-      if (d.autoResolvable && d.confidence > 0.85) {
+      if (d.autoResolvable && d.confidence.autoResolve > 0.85) {
         if (d.type === 'booking' || d.type === 'rebook') {
           if (slots > 0) slots--
         }
