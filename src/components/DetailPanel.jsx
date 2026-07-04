@@ -64,6 +64,7 @@ export default function DetailPanel({ request, decision }) {
                 )}
               </div>
               <textarea
+                key={decision?.id || 'empty'}
                 className="response-textarea"
                 defaultValue={decision.suggestedResponse}
                 disabled={decision.needsManager}
