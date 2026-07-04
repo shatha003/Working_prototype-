@@ -1,10 +1,27 @@
-export default function DetailPanel({ request, decision }) {
-  if (!request) return <div className="empty-state">No request selected</div>
+import { useState } from 'react'
+
+export default function DetailPanel({ request, decision, simActive, onApprove, onReject }) {
+  const [toast, setToast] = useState(null)
+
+  if (!request) return (
+    <div className="empty-state">
+      {simActive ? 'Requests arriving... select one to inspect' : 'No request selected'}
+    </div>
+  )
 
   const confVal = decision?.confidence?.autoResolve ?? 0
   const confClass = confVal >= 0.85 ? 'high' : confVal >= 0.5 ? 'medium' : 'low'
   const gaugeCircumference = 2 * Math.PI * 30
   const gaugeOffset = gaugeCircumference * (1 - confVal)
+
+  const needsApproval = decision?.needsManager && !decision?.managerAction
+  const isApproved = decision?.managerAction === 'approved'
+  const isRejected = decision?.managerAction === 'rejected'
+
+  const handleSend = () => {
+    setToast('Response sent to customer')
+    setTimeout(() => setToast(null), 2500)
+  }
 
   return (
     <div className="detail-panel">
@@ -56,27 +73,103 @@ export default function DetailPanel({ request, decision }) {
               <p className="card-value">{decision.owner}</p>
             </div>
 
+            {/* Manager Approval Queue — only for escalated requests */}
+            {needsApproval && (
+              <div className="card approval-card">
+                <div className="approval-header">
+                  <div className="approval-icon">🔒</div>
+                  <div>
+                    <p className="approval-title">Manager Approval Required</p>
+                    <p className="approval-subtitle">
+                      Refund ${request.refundAmount} exceeds the $200 limit.
+                      Review the AI-drafted response below.
+                    </p>
+                  </div>
+                </div>
+                <div className="approval-actions">
+                  <button className="btn btn-approve" onClick={() => onApprove(decision.id)}>
+                    ✓ Approve & Send
+                  </button>
+                  <button className="btn btn-reject" onClick={() => onReject(decision.id)}>
+                    ✕ Reject
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Approved badge */}
+            {isApproved && (
+              <div className="card" style={{ borderColor: 'var(--success)', background: 'var(--success-soft)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 18 }}>✓</span>
+                  <div>
+                    <p style={{ fontWeight: 600, color: 'var(--success)', fontSize: 14 }}>Approved by Manager</p>
+                    <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>Response is ready to send.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Rejected badge */}
+            {isRejected && (
+              <div className="card" style={{ borderColor: 'var(--danger)', background: 'var(--danger-soft)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 18 }}>✕</span>
+                  <div>
+                    <p style={{ fontWeight: 600, color: 'var(--danger)', fontSize: 14 }}>Rejected by Manager</p>
+                    <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>Draft rejected. Needs manual rewrite and re-escalation.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="card">
               <div className="response-area-header">
                 <p className="card-label">Suggested Response</p>
-                {decision.needsManager && (
+                {(decision.needsManager && !decision.managerAction) && (
                   <span className="badge badge-blocked">Awaiting manager approval</span>
+                )}
+                {isApproved && (
+                  <span className="badge badge-auto-resolved">Approved</span>
+                )}
+                {isRejected && (
+                  <span className="badge badge-escalated">Rejected</span>
                 )}
               </div>
               <textarea
                 key={decision?.id || 'empty'}
                 className="response-textarea"
                 defaultValue={decision.suggestedResponse}
-                disabled={decision.needsManager}
+                disabled={decision.needsManager && !decision.managerAction}
               />
               <div className="response-actions">
                 <button
                   className="btn btn-primary"
-                  disabled={decision.needsManager}
-                  title={decision.needsManager ? 'Cannot send — awaiting manager approval' : 'Send response'}
+                  disabled={decision.needsManager && !decision.managerAction}
+                  title={
+                    needsApproval ? 'Cannot send — awaiting manager approval' :
+                    isRejected ? 'Cannot send — rejected by manager' :
+                    'Send response'
+                  }
+                  onClick={handleSend}
                 >
-                  {decision.needsManager ? 'Send blocked' : 'Send response'}
+                  {needsApproval ? 'Send blocked' :
+                   isRejected ? 'Send blocked' :
+                   'Send response'}
                 </button>
+                {toast && (
+                  <div style={{
+                    position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+                    background: 'var(--bg-surface)', border: '1px solid var(--border)',
+                    borderRadius: '12px', padding: '12px 24px',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                    fontSize: 13, fontWeight: 500, zIndex: 9999,
+                    animation: 'fadeIn 0.2s ease',
+                  }}>
+                    <span style={{ color: 'var(--success)', marginRight: 8 }}>✓</span>
+                    {toast}
+                  </div>
+                )}
               </div>
             </div>
 
