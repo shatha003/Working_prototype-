@@ -1,0 +1,241 @@
+===============================================================================
+  BUILD.SOLVE.IMPACT. — Prompt Library for AI Agent
+===============================================================================
+  All prompts share this opening line:
+  "You are an expert engineer in a fast-paced coding competition. Speed,
+   readability, and functional correctness are my top priorities. Avoid
+   unnecessary abstractions unless they are critical for the functionality."
+===============================================================================
+
+
+
+1. System Architect (Strategic Thinking)
+─────────────────────────────────────────
+Prompt:
+
+"You are an expert engineer in a fast-paced coding competition. Speed,
+readability, and functional correctness are my top priorities. Avoid
+unnecessary abstractions unless they are critical for the functionality.
+
+Act as an expert System Architect. Analyze the following challenge: a business
+has 5 incoming customer requests, 2 staff members, 3 appointment slots, and a
+$200 manager approval limit for refunds. The goal is a React + Vite + JS
+single-page prototype with a deterministic rules engine that triages requests
+by priority and confidence, auto-resolves low-risk items, and escalates edge
+cases.
+
+Propose a robust architecture for this project. Define:
+- Core components and their responsibilities
+- Data flow from request input -> triage engine -> decision output -> UI
+- How priority scoring and confidence calculation interact
+- Where the escalation policy lives and how it's enforced
+- The folder/module structure
+
+Focus on a modular but fast-to-implement design. Refer to the guidelines in
+@tech-specs.md for coding standards. If there's a conflict between scalability
+and speed for this 45-minute challenge, prioritize the design that delivers a
+working demo fastest."
+
+
+
+2. Frontend Developer (HeroUI + React)
+────────────────────────────────────────
+Prompt:
+
+"You are an expert engineer in a fast-paced coding competition. Speed,
+readability, and functional correctness are my top priorities. Avoid
+unnecessary abstractions unless they are critical for the functionality.
+
+Based on the approved architecture, implement the frontend using React + Vite +
+JS with HeroUI (@heroui/react). Use the HeroUI MCP server for component
+examples and props. The dashboard must display:
+
+- A TopBar showing business status (2 staff available, 3 slots left, $200
+  refund limit)
+- A Sidebar listing 5 requests with priority badge, status chip, and mini
+  confidence bar for each
+- A DetailPanel showing the selected request's full decision: big confidence
+  gauge, recommended action card, owner assignment, editable suggested response
+  textarea (disabled if escalated), and a collapsible "Why this decision"
+  reasoning panel
+- An AutomationsPanel with a "Run AI Triage" button and a live trace log
+
+Adhere to HeroUI component conventions. Use Card, Badge, Progress, Button,
+Textarea, Chip, Accordion, and Divider where appropriate. Dark mode via HeroUI.
+Do not write full boilerplate — focus on the core screens. All state lives in
+App.jsx using useState/useCallback; no external state library.
+
+Refer to @tech-specs.md for UI format rules. Implement step-by-step:
+1. TopBar with counters
+2. Sidebar with request list
+3. DetailPanel with all sub-sections
+4. AutomationsPanel with trace log"
+
+
+
+3. Rules Engine Developer (Triage Logic)
+──────────────────────────────────────────
+Prompt:
+
+"You are an expert engineer in a fast-paced coding competition. Speed,
+readability, and functional correctness are my top priorities. Avoid
+unnecessary abstractions unless they are critical for the functionality.
+
+Based on the approved architecture, implement the triage engine logic in
+src/engine/triage.js and the supporting data in src/data/requests.js and
+src/engine/knowledgeBase.js. This is the core of the prototype — it must be
+fast, correct, and transparent.
+
+The engine receives 5 requests and returns a decision object for each:
+
+const decision = {
+  id, customer, type, priority, priorityScore, confidence,
+  recommendedAction, owner, autoResolvable, needsManager,
+  suggestedResponse, reason, evidence
+}
+
+Scoring model:
+- urgency (0-30): bad-review threats, VIP churn, angry customers score high
+- customerValue (0-20): VIP boost, new-customer modest
+- resolutionRisk (0-20): low risk = higher score; refund/ambiguous = lower
+- slaBreachRisk (0-15): reputation threat, time-sensitive
+- policyFit (0-15): KB match, slots available, refund within limit
+
+Confidence is computed per recommended action, not globally. It reflects
+"how sure the AI is the action is correct." Range: 0.00 to 0.96.
+
+Implement step-by-step:
+1. Define the 5 requests with realistic detail in requests.js
+2. Define KB entries in knowledgeBase.js (pricing, booking policy, VIP policy)
+3. Implement the scoring function in triage.js
+4. Implement the decision logic (assign action, owner, response, reason)
+5. Enforce the refund-limit edge case (confidence = 0 for auto-resolve)
+6. Export triageAll() and triageOne() functions
+
+Each function must be under 30 lines. No classes — use pure functions.
+Refer to @tech-specs.md for coding standards."
+
+
+
+4. QA & Edge Case Tester (Quality Assurance)
+──────────────────────────────────────────────
+Prompt:
+
+"You are an expert engineer in a fast-paced coding competition. Speed,
+readability, and functional correctness are my top priorities. Avoid
+unnecessary abstractions unless they are critical for the functionality.
+
+Review the following code: [src/engine/triage.js].
+
+Identify 3 critical edge cases where the system might fail or make a wrong
+decision:
+
+1. REFUND > LIMIT: The angry customer refund of $450 exceeds the $200 manager
+   approval limit. Verify the engine sets needsManager=true, confidence for
+   auto-resolve = 0.00, recommendedAction = 'escalate', and the suggested
+   response is disabled for sending.
+
+2. NO SLOTS + VIP REBOOK: VIP customer needs rebooking but all 3 slots are
+   taken. The engine should NOT auto-assign — it should escalate with reason
+   "No available slots for VIP rebooking."
+
+3. AMBIGUOUS URGENCY: The bad-review threat customer has vague intent. The
+   engine should set confidence < 0.75 and recommendedAction to
+   'draft+escalate' rather than auto-resolve.
+
+Don't just list vulnerabilities. Provide the specific code snippets to patch
+each edge case. Then generate a single Vitest unit test to verify all fixes."
+
+
+
+5. Demo Script Writer (90-Second Pitch)
+─────────────────────────────────────────
+Prompt:
+
+"You are an expert engineer in a fast-paced coding competition. Speed,
+readability, and functional correctness are my top priorities. Avoid
+unnecessary abstractions unless they are critical for the functionality.
+
+Write a 90-second demo script for a working prototype that triages 5 incoming
+business requests using a priority + confidence rules engine with automated
+workflows and an edge case escalation.
+
+Structure:
+- (0:00-0:15) Set the scene: 5 requests, 2 staff, 3 slots, $200 refund limit.
+  "Every business gets overwhelmed. Here's how AI helps."
+- (0:15-0:40) Walk through the sidebar: point out priority ordering (VIP at
+  top, urgent threats, pricing Q at bottom) and confidence gauges. "The engine
+  scores each request on urgency, value, and risk."
+- (0:40-1:00) Hit "Run AI Triage": watch 2 requests auto-resolve (pricing Q
+  answered from KB, new customer gets earliest slot). Staff/slot counters
+  decrement. "Low-risk requests handled automatically — staff freed for
+  complex work."
+- (1:00-1:20) Open the Omar refund escalation. Show confidence = 0 for
+  auto-resolve, Send button disabled, reasoning panel with policy block.
+  "When rules are exceeded, AI knows its limits. Escalates with full context."
+- (1:20-1:30) "One thing I'd build next: a real-time manager approval queue
+  with push notifications. The engine already sends the draft — just needs
+  a 'Review & Confirm' flow."
+
+Write the script in a natural speaking tone. Reference on-screen UI elements.
+Refer to @tech-specs.md for any format rules."
+
+
+
+6. Code Reviewer (Post-Implementation)
+───────────────────────────────────────
+Prompt:
+
+"You are an expert engineer in a fast-paced coding competition. Speed,
+readability, and functional correctness are my top priorities. Avoid
+unnecessary abstractions unless they are critical for the functionality.
+
+Review the entire codebase of this Build.Solve.Impact. prototype after
+implementation. Check for:
+
+1. Are all functions under 30 lines (SRP)?
+2. Is the confidence scoring transparent and explainable?
+3. Does the refund-limit edge case properly block auto-resolve?
+4. Is the "Run AI Triage" workflow correctly wired end-to-end?
+5. Are there any console errors or unhandled edge cases?
+6. Does the AutomationsPanel trace log reflect actual engine decisions?
+
+Provide a checklist of up to 3 improvements if needed. If everything is clean,
+confirm the prototype is demo-ready."
+
+
+
+7. Workflow Automation Developer (Agentic Pipeline)
+─────────────────────────────────────────────────────
+Prompt:
+
+"You are an expert engineer in a fast-paced coding competition. Speed,
+readability, and functional correctness are my top priorities. Avoid
+unnecessary abstractions unless they are critical for the functionality.
+
+Based on the approved architecture, implement the automated workflow system
+that runs after the triage engine executes. The workflow must:
+
+1. Read the decisions array from triageAll()
+2. For each request where autoResolvable === true AND confidence > 0.85:
+   - Assign the request to an available staff member (decrement staff count)
+   - If the request involves a booking, decrement slots available
+   - Generate the suggested response from KB or template
+   - Mark status as "Auto-resolved"
+   - Push a step to the trace log array
+3. For requests where needsManager === true:
+   - Mark status as "Escalated"
+   - Push escalation step to trace log
+   - Ensure Send button is disabled in the UI (handled via state)
+4. For remaining requests:
+   - Mark status as "Pending human review"
+   - Assign to the remaining staff member if any
+   - Push pending step to trace log
+
+The trace log is an array of { timestamp, requestId, action, detail } objects
+displayed in AutomationsPanel as a scrollable timeline. Each step should read
+like: "Detected: pricing query → KB match → Confidence 0.96 → Drafted response
+→ Status: Auto-resolved"
+
+Refer to @tech-specs.md for coding standards. Keep all workflow logic in
+a single src/engine/workflow.js file that exports runWorkflow(decisions, state)."
